@@ -5,6 +5,7 @@ import { insertUserSchema, insertWalletSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
+import createMemoryStore from "memorystore";
 import { getPool } from "./db";
 import { 
   createNewWallet, 
@@ -31,12 +32,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     throw new Error('SESSION_SECRET environment variable is required in production');
   }
 
+  const MemoryStore = createMemoryStore(session);
   const sessionStore = process.env.DATABASE_URL 
     ? new PgSession({
         pool: getPool(),
         createTableIfMissing: true,
       })
-    : undefined;
+    : new MemoryStore({
+        checkPeriod: 86400000, // prune expired entries every 24h
+      });
 
   app.use(
     session({
@@ -61,10 +65,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
-      // Set the session ID from the token
+      // Manually set the session ID and reload from store
       req.sessionID = token;
+      
+      // Force session reload with the new ID
+      sessionStore.get(token, (err: any, sessionData: any) => {
+        if (!err && sessionData) {
+          req.session = Object.assign(req.session, sessionData);
+        }
+        next();
+      });
+    } else {
+      next();
     }
-    next();
   });
 
   app.post("/api/auth/register", async (req, res) => {
