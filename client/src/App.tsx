@@ -40,6 +40,12 @@ function Router() {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && !['/register', '/login', '/auth'].includes(location)) {
+      setLocation('/login');
+    }
+  }, [isAuthenticated, location, setLocation, isLoading]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -48,16 +54,6 @@ function Router() {
         </div>
       </div>
     );
-  }
-
-  useEffect(() => {
-    if (!isAuthenticated && !['/register', '/login', '/auth'].includes(location)) {
-      setLocation('/login');
-    }
-  }, [isAuthenticated, location, setLocation]);
-
-  if (!isAuthenticated && !['/register', '/login', '/auth'].includes(location)) {
-    return null;
   }
 
   if (!isAuthenticated) {
