@@ -105,6 +105,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       console.log('Session after login:', req.session.userId, 'SessionID:', req.sessionID);
+      
+      // Send session ID in response header as backup
+      res.setHeader('X-Session-ID', req.sessionID);
       res.json({ user: { id: user.id, username: user.username } });
     } catch (error: any) {
       console.error('Login error:', error);
@@ -129,7 +132,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "User not found" });
       }
 
+      console.log('PIN verification details:');
+      console.log('- Received PIN:', pin);
+      console.log('- PIN length:', pin?.length);
+      console.log('- Stored hash:', user.pin);
+      console.log('- Hash length:', user.pin?.length);
+
       const validPin = await bcrypt.compare(pin, user.pin);
+      console.log('- PIN valid:', validPin);
+      
       if (!validPin) {
         return res.status(401).json({ error: "Invalid PIN" });
       }

@@ -30,8 +30,20 @@ export default function LoginPage() {
         return;
       }
 
-      // Wait a bit for session to be saved before redirecting
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for session to be fully saved and cookie to be set
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Verify session was established by checking /api/auth/me
+      const checkResponse = await fetch('/api/auth/me', {
+        credentials: 'include',
+      });
+      
+      if (!checkResponse.ok) {
+        showError("Session Error", "Failed to establish session. Please try again.");
+        setLoading(false);
+        return;
+      }
+      
       setLocation('/auth');
     } catch (error: any) {
       showError("Login Error", error.message || "Unable to login. Please try again.");
