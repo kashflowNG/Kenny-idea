@@ -3,12 +3,11 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
 import PinInput from "@/components/PinInput";
+import { showError } from "@/lib/notifications";
 
 export default function RegisterPage() {
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
   const [step, setStep] = useState<'credentials' | 'pin'>('credentials');
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -31,22 +30,28 @@ export default function RegisterPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Registration failed');
+        // Use the standardized showError function
+        showError(data.error || 'Registration failed');
+        setPin(""); // Clear PIN on error
+        return; // Stop execution if registration failed
       }
 
-      toast({
-        title: "Account created!",
-        description: "Welcome to TRON Wallet",
-      });
+      // Assuming the registration API now handles session creation correctly
+      // and we don't need to manually set localStorage here.
+      // If session persistence is still an issue, it needs to be addressed in the API.
 
-      localStorage.setItem('authenticated', 'true');
+      // Success message can be handled differently if needed, but for now,
+      // we'll assume the redirection is sufficient upon successful registration.
+      // If a success toast is desired, it can be re-added here.
+      // toast({
+      //   title: "Account created!",
+      //   description: "Welcome to TRON Wallet",
+      // });
+
       setLocation('/');
     } catch (error: any) {
-      toast({
-        title: "Registration failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      // Use the standardized showError function for network or unexpected errors
+      showError(error.message || 'An unexpected error occurred');
       setPin("");
     }
   };
@@ -120,7 +125,7 @@ export default function RegisterPage() {
               onChange={setPin}
               onComplete={handlePinComplete}
             />
-            
+
             <Button 
               variant="ghost" 
               className="w-full"

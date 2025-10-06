@@ -55,7 +55,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req, res) => {
     try {
       const { username, password, pin } = insertUserSchema.parse(req.body);
-      
+
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
         return res.status(400).json({ error: "Username already exists" });
@@ -63,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const hashedPassword = await bcrypt.hash(password, 10);
       const hashedPin = await bcrypt.hash(pin, 10);
-      
+
       const user = await storage.createUser({
         username,
         password: hashedPassword,
@@ -71,6 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       req.session.userId = user.id;
+      await new Promise((resolve) => req.session.save(resolve));
       res.json({ user: { id: user.id, username: user.username } });
     } catch (error: any) {
       res.status(400).json({ error: error.message || "Registration failed" });
@@ -80,7 +81,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      
+
       const user = await storage.getUserByUsername(username);
       if (!user) {
         return res.status(401).json({ error: "Invalid credentials" });
@@ -92,6 +93,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.userId = user.id;
+      await new Promise((resolve) => req.session.save(resolve));
       res.json({ user: { id: user.id, username: user.username } });
     } catch (error: any) {
       res.status(400).json({ error: error.message || "Login failed" });
@@ -106,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { pin } = req.body;
       const user = await storage.getUser(req.session.userId);
-      
+
       if (!user) {
         return res.status(401).json({ error: "User not found" });
       }
@@ -152,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { address, privateKey } = await createNewWallet();
-      
+
       const wallet = await storage.createWallet({
         userId: req.session.userId,
         address,
@@ -174,7 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { privateKey } = req.body;
       const { address } = await importWallet(privateKey);
-      
+
       const existingWallet = await storage.getWalletByAddress(address);
       if (existingWallet) {
         return res.status(400).json({ error: "Wallet already exists" });
@@ -201,7 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { address, privateKey } = await createNewWallet();
       const demoProfile = generateDemoProfile();
-      
+
       const wallet = await storage.createWallet({
         userId: req.session.userId,
         address,
@@ -236,13 +238,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const wallets = await storage.getWalletsByUserId(req.session.userId);
-      
+
       const walletsWithBalances = await Promise.all(
         wallets.map(async (wallet) => {
           const trxBalance = await getTRXBalance(wallet.address);
           const usdtBalance = await getUSDTBalance(wallet.address);
           const trxPrice = await getTRXPrice();
-          
+
           return {
             id: wallet.id,
             address: wallet.address,

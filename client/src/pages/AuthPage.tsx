@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import PinInput from "@/components/PinInput";
-import { useToast } from "@/hooks/use-toast";
+import { showError } from "@/lib/notifications";
 
 export default function AuthPage() {
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
   const [pin, setPin] = useState("");
 
   const handlePinComplete = async (value: string) => {
@@ -17,16 +16,13 @@ export default function AuthPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Invalid PIN');
+        const data = await response.json();
+        throw new Error(data.error || 'Invalid PIN');
       }
 
       setLocation('/');
-    } catch (error) {
-      toast({
-        title: "Invalid PIN",
-        description: "Please try again",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      showError("Authentication Failed", error.message || "Please try again");
       setPin("");
     }
   };

@@ -3,11 +3,10 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { showError } from "@/lib/notifications";
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,14 +27,11 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed');
       }
 
-      localStorage.setItem('authenticated', 'true');
+      // Wait a bit for session to be saved before redirecting
+      await new Promise(resolve => setTimeout(resolve, 100));
       setLocation('/auth');
     } catch (error: any) {
-      toast({
-        title: "Login failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      showError("Login Failed", error.message);
     } finally {
       setLoading(false);
     }
