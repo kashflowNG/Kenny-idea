@@ -47,7 +47,14 @@ export default function LoginPage() {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Verify session was established by checking /api/auth/me
+      const sessionToken = data.sessionToken;
+      const headers: Record<string, string> = {};
+      if (sessionToken) {
+        headers['Authorization'] = `Bearer ${sessionToken}`;
+      }
+      
       const checkResponse = await fetch('/api/auth/me', {
+        headers,
         credentials: 'include',
       });
 

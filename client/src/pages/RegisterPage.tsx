@@ -133,7 +133,6 @@ export default function RegisterPage() {
               value={pin}
               onChange={setPin}
               onComplete={handlePinComplete}
-              disabled={loading} // Disable PinInput while loading
             />
 
             <Button 
