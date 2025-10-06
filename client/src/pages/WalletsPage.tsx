@@ -1,26 +1,62 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import WalletItem from "@/components/WalletItem";
 import CreateWalletDialog from "@/components/CreateWalletDialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Wallet } from "lucide-react";
-import { generateDemoProfile } from "@/lib/demo";
-
-//todo: remove mock functionality
-const mockWallets = [
-  { address: 'TXYZabcdefghijklmnopqrstuvwxyz123456', balance: '1,234.56', usdValue: '156.78' },
-  { address: 'TABCdefghijklmnopqrstuvwxyz789012345', balance: '5,678.90', usdValue: '720.45' },
-];
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function WalletsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-  const handleCreateWallet = (type: 'new' | 'import' | 'demo', data?: any) => {
-    if (type === 'demo') {
-      const profile = generateDemoProfile();
-      console.log('Demo profile generated:', profile);
+  const { data, isLoading } = useQuery({
+    queryKey: ['/api/wallets'],
+  });
+
+  const handleCreateWallet = async (type: 'new' | 'import' | 'demo', data?: any) => {
+    try {
+      let endpoint = '/api/wallets/create';
+      let body = {};
+
+      if (type === 'import') {
+        endpoint = '/api/wallets/import';
+        body = { privateKey: data.privateKey };
+      } else if (type === 'demo') {
+        endpoint = '/api/wallets/demo';
+      }
+
+      const response = await apiRequest(endpoint, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+
+      toast({
+        title: "Wallet created!",
+        description: type === 'demo' ? "Demo wallet with profile generated" : "Your new wallet is ready",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['/api/wallets'] });
+      setDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Failed to create wallet",
+        description: error.message,
+        variant: "destructive",
+      });
     }
-    console.log('Creating wallet:', type, data);
   };
+
+  const wallets = data?.wallets || [];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -36,12 +72,14 @@ export default function WalletsPage() {
           </Button>
         </div>
 
-        {mockWallets.length > 0 ? (
+        {wallets.length > 0 ? (
           <div className="space-y-3">
-            {mockWallets.map((wallet, i) => (
+            {wallets.map((wallet: any) => (
               <WalletItem
-                key={i}
-                {...wallet}
+                key={wallet.id}
+                address={wallet.address}
+                balance={wallet.trxBalance?.toFixed(2) || "0.00"}
+                usdValue={wallet.usdValue || "0.00"}
                 onClick={() => console.log('Wallet clicked:', wallet.address)}
               />
             ))}

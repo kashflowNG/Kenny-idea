@@ -1,27 +1,54 @@
-import { useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import BalanceCard from "@/components/BalanceCard";
 import TransactionItem from "@/components/TransactionItem";
 import DemoProfileBadge from "@/components/DemoProfileBadge";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
-//todo: remove mock functionality
-const mockTransactions = [
-  { type: 'receive' as const, amount: '250.00', currency: 'TRX' as const, address: 'TXYZabcdefghijklmnopqrstuvwxyz123456', timestamp: '2 hours ago', status: 'completed' as const },
-  { type: 'send' as const, amount: '100.50', currency: 'USDT' as const, address: 'TXYZabcdefghijklmnopqrstuvwxyz789012', timestamp: 'Yesterday', status: 'completed' as const },
-  { type: 'receive' as const, amount: '500.00', currency: 'TRX' as const, address: 'TXYZabcdefghijklmnopqrstuvwxyz345678', timestamp: '2 days ago', status: 'completed' as const },
-];
-
-const mockDemoProfile = {
-  email: 'john.demo2024@gmail.com',
-  phone: '+1 (555) 987-6543',
-  password: 'Demo#123'
-};
-
 export default function HomePage() {
   const [, setLocation] = useLocation();
-  const [isDemoMode] = useState(true); //todo: remove mock functionality
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['/api/wallets'],
+  });
+
+  const wallets = data?.wallets || [];
+  const primaryWallet = wallets[0];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!primaryWallet) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <div className="max-w-md mx-auto p-4 space-y-6">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-bold">My Wallet</h1>
+          </div>
+
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Plus className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">No Wallets Yet</h3>
+            <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+              Create your first wallet to start managing your TRX and USDT tokens
+            </p>
+            <Button onClick={() => setLocation('/wallets')} data-testid="button-create-first">
+              <Plus className="w-4 h-4 mr-2" />
+              Create Wallet
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -38,13 +65,17 @@ export default function HomePage() {
           </Button>
         </div>
 
-        {isDemoMode && (
-          <DemoProfileBadge {...mockDemoProfile} />
+        {primaryWallet.isDemo && primaryWallet.demoProfile && (
+          <DemoProfileBadge 
+            email={primaryWallet.demoProfile.email}
+            phone={primaryWallet.demoProfile.phone}
+            password={primaryWallet.demoProfile.password}
+          />
         )}
 
         <BalanceCard
-          balance="1,234.56"
-          usdValue="156.78"
+          balance={primaryWallet.trxBalance?.toFixed(2) || "0.00"}
+          usdValue={primaryWallet.usdValue || "0.00"}
           currency="TRX"
           onSend={() => setLocation('/send')}
           onReceive={() => setLocation('/receive')}
@@ -53,21 +84,27 @@ export default function HomePage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Recent Transactions</h2>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => console.log('View all')}
-              data-testid="button-view-all"
-            >
-              View All
-            </Button>
           </div>
 
-          <div className="space-y-3">
-            {mockTransactions.map((tx, i) => (
-              <TransactionItem key={i} {...tx} />
-            ))}
-          </div>
+          {primaryWallet.transactions && primaryWallet.transactions.length > 0 ? (
+            <div className="space-y-3">
+              {primaryWallet.transactions.slice(0, 5).map((tx: any, i: number) => (
+                <TransactionItem 
+                  key={i} 
+                  type={tx.type}
+                  amount={tx.amount.toString()}
+                  currency="TRX"
+                  address={tx.type === 'send' ? tx.to : tx.from}
+                  timestamp={new Date(tx.timestamp).toLocaleDateString()}
+                  status="completed"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No transactions yet
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,12 +1,35 @@
 import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import QRCodeDisplay from "@/components/QRCodeDisplay";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ReceivePage() {
   const [, setLocation] = useLocation();
-  //todo: remove mock functionality
-  const mockAddress = "TXYZabcdefghijklmnopqrstuvwxyz1234567890";
+  const { toast } = useToast();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['/api/wallets'],
+  });
+
+  const wallets = data?.wallets || [];
+  const primaryWallet = wallets[0];
+
+  const handleCopy = () => {
+    toast({
+      title: "Address copied!",
+      description: "Share this address to receive tokens",
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -24,7 +47,16 @@ export default function ReceivePage() {
         </div>
 
         <div className="p-4 pt-8">
-          <QRCodeDisplay address={mockAddress} />
+          {primaryWallet ? (
+            <QRCodeDisplay 
+              address={primaryWallet.address} 
+              onCopy={handleCopy}
+            />
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No wallet available. Please create a wallet first.
+            </div>
+          )}
         </div>
       </div>
     </div>

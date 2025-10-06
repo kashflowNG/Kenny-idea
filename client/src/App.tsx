@@ -11,20 +11,61 @@ import SendPage from "@/pages/SendPage";
 import ReceivePage from "@/pages/ReceivePage";
 import SettingsPage from "@/pages/SettingsPage";
 import AuthPage from "@/pages/AuthPage";
+import RegisterPage from "@/pages/RegisterPage";
+import LoginPage from "@/pages/LoginPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   const [location, setLocation] = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const hasAuth = localStorage.getItem('authenticated');
-    if (hasAuth) {
-      setIsAuthenticated(true);
-    }
+    const checkAuth = async () => {
+      const hasAuth = localStorage.getItem('authenticated');
+      if (hasAuth) {
+        try {
+          const response = await fetch('/api/auth/me');
+          if (response.ok) {
+            setIsAuthenticated(true);
+          } else {
+            localStorage.removeItem('authenticated');
+          }
+        } catch {
+          localStorage.removeItem('authenticated');
+        }
+      }
+      setIsLoading(false);
+    };
+    checkAuth();
   }, []);
 
-  if (!isAuthenticated) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-[#E6004D]">
+          <span className="text-2xl font-bold text-white">T</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated && !['/register', '/login'].includes(location)) {
+    return (
+      <Switch>
+        <Route path="/register" component={RegisterPage} />
+        <Route path="/login" component={LoginPage} />
+        <Route path="*">
+          {() => {
+            setLocation('/login');
+            return null;
+          }}
+        </Route>
+      </Switch>
+    );
+  }
+
+  if (location === '/auth') {
     return <AuthPage />;
   }
 
@@ -47,6 +88,8 @@ function Router() {
         <Route path="/send" component={SendPage} />
         <Route path="/receive" component={ReceivePage} />
         <Route path="/settings" component={SettingsPage} />
+        <Route path="/register" component={RegisterPage} />
+        <Route path="/login" component={LoginPage} />
         <Route component={NotFound} />
       </Switch>
       

@@ -1,16 +1,34 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import PinInput from "@/components/PinInput";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AuthPage() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [pin, setPin] = useState("");
 
-  const handlePinComplete = (value: string) => {
-    console.log('PIN entered:', value);
-    setTimeout(() => {
+  const handlePinComplete = async (value: string) => {
+    try {
+      const response = await fetch('/api/auth/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: value }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Invalid PIN');
+      }
+
       setLocation('/');
-    }, 500);
+    } catch (error) {
+      toast({
+        title: "Invalid PIN",
+        description: "Please try again",
+        variant: "destructive",
+      });
+      setPin("");
+    }
   };
 
   return (
