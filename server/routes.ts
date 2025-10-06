@@ -44,11 +44,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
       resave: false,
       saveUninitialized: false,
+      name: 'sessionId',
+      proxy: true,
       cookie: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: false,
+        sameSite: 'lax',
         maxAge: 1000 * 60 * 60 * 24 * 7,
+        path: '/',
       },
     })
   );
