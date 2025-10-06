@@ -13,6 +13,7 @@ export default function AuthPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin: value }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
