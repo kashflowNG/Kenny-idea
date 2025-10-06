@@ -14,7 +14,7 @@ export async function apiRequest(
 ): Promise<Response> {
   const sessionToken = localStorage.getItem('sessionToken');
   const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
-  
+
   if (sessionToken) {
     headers['Authorization'] = `Bearer ${sessionToken}`;
   }
@@ -38,7 +38,7 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     const sessionToken = localStorage.getItem('sessionToken');
     const headers: Record<string, string> = {};
-    
+
     if (sessionToken) {
       headers['Authorization'] = `Bearer ${sessionToken}`;
     }

@@ -29,6 +29,9 @@ export default function WalletsPage() {
 
       const response = await apiRequest(endpoint, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(body),
       });
 
