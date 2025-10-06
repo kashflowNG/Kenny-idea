@@ -94,15 +94,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.userId = user.id;
-      await new Promise((resolve) => req.session.save(resolve));
+      await new Promise((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve(undefined);
+        });
+      });
+      
+      console.log('Session after login:', req.session.userId, 'SessionID:', req.sessionID);
       res.json({ user: { id: user.id, username: user.username } });
     } catch (error: any) {
+      console.error('Login error:', error);
       res.status(400).json({ error: error.message || "Login failed" });
     }
   });
 
   app.post("/api/auth/verify-pin", async (req, res) => {
     try {
+      console.log('PIN verification - SessionID:', req.sessionID, 'UserID:', req.session.userId);
+      console.log('Session data:', req.session);
+      console.log('Cookies:', req.headers.cookie);
+      
       if (!req.session.userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -121,6 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true });
     } catch (error: any) {
+      console.error('PIN verification error:', error);
       res.status(400).json({ error: error.message });
     }
   });
