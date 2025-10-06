@@ -1,9 +1,7 @@
 import { type User, type InsertUser, type Wallet, type InsertWallet, users, wallets } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
 import { eq } from "drizzle-orm";
-
-const { Pool } = pg;
+import { getPool } from "./db";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -21,10 +19,7 @@ export class DbStorage implements IStorage {
   private db;
 
   constructor() {
-    if (!process.env.DATABASE_URL) {
-      throw new Error("DATABASE_URL environment variable is required");
-    }
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const pool = getPool();
     this.db = drizzle(pool);
   }
 

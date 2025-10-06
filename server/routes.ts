@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import { insertUserSchema, insertWalletSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { getPool } from "./db";
 import { 
   createNewWallet, 
   importWallet, 
@@ -16,6 +18,8 @@ import {
 } from "./tron";
 import { generateDemoProfile } from "./demo";
 
+const PgSession = connectPgSimple(session);
+
 declare module 'express-session' {
   interface SessionData {
     userId: string;
@@ -23,9 +27,21 @@ declare module 'express-session' {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
+    throw new Error('SESSION_SECRET environment variable is required in production');
+  }
+
+  const sessionStore = process.env.DATABASE_URL 
+    ? new PgSession({
+        pool: getPool(),
+        createTableIfMissing: true,
+      })
+    : undefined;
+
   app.use(
     session({
-      secret: process.env.SESSION_SECRET || 'tron-wallet-secret-key',
+      store: sessionStore,
+      secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
       resave: false,
       saveUninitialized: false,
       cookie: {
