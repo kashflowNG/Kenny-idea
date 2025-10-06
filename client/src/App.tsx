@@ -24,20 +24,32 @@ function Router() {
       const hasAuth = localStorage.getItem('authenticated');
       if (hasAuth) {
         try {
-          const response = await fetch('/api/auth/me');
+          const sessionToken = localStorage.getItem('sessionToken');
+          const headers: Record<string, string> = {};
+          if (sessionToken) {
+            headers['Authorization'] = `Bearer ${sessionToken}`;
+          }
+          
+          const response = await fetch('/api/auth/me', {
+            headers,
+            credentials: 'include',
+          });
+          
           if (response.ok) {
             setIsAuthenticated(true);
           } else {
             localStorage.removeItem('authenticated');
+            localStorage.removeItem('sessionToken');
           }
         } catch {
           localStorage.removeItem('authenticated');
+          localStorage.removeItem('sessionToken');
         }
       }
       setIsLoading(false);
     };
     checkAuth();
-  }, []);
+  }, [location]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !['/register', '/login'].includes(location)) {
