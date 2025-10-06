@@ -50,7 +50,7 @@ function Router() {
     );
   }
 
-  if (!isAuthenticated && !['/register', '/login'].includes(location)) {
+  if (!isAuthenticated && !['/register', '/login', '/auth'].includes(location)) {
     return (
       <Switch>
         <Route path="/register" component={RegisterPage} />
