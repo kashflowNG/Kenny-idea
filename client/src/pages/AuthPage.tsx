@@ -9,10 +9,16 @@ export default function AuthPage() {
 
   const handlePinComplete = async (value: string) => {
     try {
+      const sessionToken = localStorage.getItem('sessionToken');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (sessionToken) {
+        headers['Authorization'] = `Bearer ${sessionToken}`;
+      }
+
       const response = await fetch('/api/auth/verify-pin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: value }),
+        headers,
+        body: JSON.stringify({ pin }),
         credentials: 'include',
       });
 
@@ -49,7 +55,7 @@ export default function AuthPage() {
 
         <p className="text-center text-sm text-muted-foreground">
           Forgot your PIN?{" "}
-          <button 
+          <button
             className="text-primary hover:underline"
             onClick={() => console.log('Reset PIN')}
             data-testid="button-forgot-pin"

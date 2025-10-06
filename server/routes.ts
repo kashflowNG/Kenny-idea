@@ -56,6 +56,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })
   );
 
+  // Middleware to accept session token from Authorization header
+  app.use((req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      // Set the session ID from the token
+      req.sessionID = token;
+    }
+    next();
+  });
+
   app.post("/api/auth/register", async (req, res) => {
     try {
       const { username, password, pin } = insertUserSchema.parse(req.body);
@@ -76,7 +87,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       req.session.userId = user.id;
       await new Promise((resolve) => req.session.save(resolve));
-      res.json({ user: { id: user.id, username: user.username } });
+      res.json({ 
+        user: { id: user.id, username: user.username },
+        sessionToken: req.sessionID
+      });
     } catch (error: any) {
       res.status(400).json({ error: error.message || "Registration failed" });
     }
@@ -106,9 +120,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('Session after login:', req.session.userId, 'SessionID:', req.sessionID);
       
-      // Send session ID in response header as backup
-      res.setHeader('X-Session-ID', req.sessionID);
-      res.json({ user: { id: user.id, username: user.username } });
+      // Send session token in response for environments where cookies don't work
+      res.json({ 
+        user: { id: user.id, username: user.username },
+        sessionToken: req.sessionID
+      });
     } catch (error: any) {
       console.error('Login error:', error);
       res.status(400).json({ error: error.message || "Login failed" });

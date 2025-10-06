@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [pin, setPin] = useState("");
+  const [loading, setLoading] = useState(false); // Added loading state
 
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,6 +22,7 @@ export default function RegisterPage() {
   };
 
   const handlePinComplete = async (pinValue: string) => {
+    setLoading(true); // Set loading to true before fetch
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -31,14 +33,23 @@ export default function RegisterPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        showError("Registration Failed", data.error || "Unable to create account");
+        showError("Registration Failed", data.error || "Failed to create account");
+        setLoading(false); // Set loading to false on error
         setPin("");
         return;
       }
 
+      const data = await response.json();
+
+      // Store session token in localStorage for subsequent requests
+      if (data.sessionToken) {
+        localStorage.setItem('sessionToken', data.sessionToken);
+      }
+
       setLocation('/');
     } catch (error: any) {
-      showError("Registration Error", error.message || "An unexpected error occurred. Please try again.");
+      showError("Registration Error", error.message || "Unable to register. Please try again.");
+      setLoading(false); // Set loading to false on error
       setPin("");
     }
   };
@@ -68,6 +79,7 @@ export default function RegisterPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 data-testid="input-username"
                 required
+                disabled={loading} // Disable input while loading
               />
             </div>
 
@@ -81,16 +93,17 @@ export default function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 data-testid="input-password"
                 required
+                disabled={loading} // Disable input while loading
               />
             </div>
 
             <Button 
               type="submit" 
               className="w-full"
-              disabled={!username || !password}
+              disabled={!username || !password || loading} // Disable button while loading
               data-testid="button-continue"
             >
-              Continue
+              {loading ? 'Processing...' : 'Continue'}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
@@ -100,6 +113,7 @@ export default function RegisterPage() {
                 className="text-primary hover:underline"
                 onClick={() => setLocation('/login')}
                 data-testid="link-login"
+                disabled={loading} // Disable link while loading
               >
                 Login
               </button>
@@ -111,6 +125,7 @@ export default function RegisterPage() {
               value={pin}
               onChange={setPin}
               onComplete={handlePinComplete}
+              disabled={loading} // Disable PinInput while loading
             />
 
             <Button 
@@ -118,6 +133,7 @@ export default function RegisterPage() {
               className="w-full"
               onClick={() => setStep('credentials')}
               data-testid="button-back"
+              disabled={loading} // Disable button while loading
             >
               Back to credentials
             </Button>
