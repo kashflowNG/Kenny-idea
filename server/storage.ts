@@ -1,5 +1,9 @@
-import { type User, type InsertUser, type Wallet, type InsertWallet } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { type User, type InsertUser, type Wallet, type InsertWallet, users, wallets } from "@shared/schema";
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg";
+import { eq } from "drizzle-orm";
+
+const { Pool } = pg;
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -13,70 +17,60 @@ export interface IStorage {
   deleteWallet(id: string): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private wallets: Map<string, Wallet>;
+export class DbStorage implements IStorage {
+  private db;
 
   constructor() {
-    this.users = new Map();
-    this.wallets = new Map();
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL environment variable is required");
+    }
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    this.db = drizzle(pool);
   }
 
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const result = await this.db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { 
-      ...insertUser, 
-      id,
-      createdAt: new Date()
-    };
-    this.users.set(id, user);
-    return user;
+    const result = await this.db.insert(users).values(insertUser).returning();
+    if (result.length === 0) {
+      throw new Error("Failed to create user");
+    }
+    return result[0];
   }
 
   async getWallet(id: string): Promise<Wallet | undefined> {
-    return this.wallets.get(id);
+    const result = await this.db.select().from(wallets).where(eq(wallets.id, id)).limit(1);
+    return result[0];
   }
 
   async getWalletsByUserId(userId: string): Promise<Wallet[]> {
-    return Array.from(this.wallets.values()).filter(
-      (wallet) => wallet.userId === userId
-    );
+    return await this.db.select().from(wallets).where(eq(wallets.userId, userId));
   }
 
   async getWalletByAddress(address: string): Promise<Wallet | undefined> {
-    return Array.from(this.wallets.values()).find(
-      (wallet) => wallet.address === address
-    );
+    const result = await this.db.select().from(wallets).where(eq(wallets.address, address)).limit(1);
+    return result[0];
   }
 
   async createWallet(insertWallet: InsertWallet): Promise<Wallet> {
-    const id = randomUUID();
-    const wallet: Wallet = {
-      ...insertWallet,
-      id,
-      isDemo: insertWallet.isDemo ?? false,
-      demoEmail: insertWallet.demoEmail ?? null,
-      demoPhone: insertWallet.demoPhone ?? null,
-      demoPassword: insertWallet.demoPassword ?? null,
-      createdAt: new Date()
-    };
-    this.wallets.set(id, wallet);
-    return wallet;
+    const result = await this.db.insert(wallets).values(insertWallet).returning();
+    if (result.length === 0) {
+      throw new Error("Failed to create wallet");
+    }
+    return result[0];
   }
 
   async deleteWallet(id: string): Promise<void> {
-    this.wallets.delete(id);
+    await this.db.delete(wallets).where(eq(wallets.id, id));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DbStorage();
