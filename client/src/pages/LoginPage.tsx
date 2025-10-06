@@ -43,28 +43,6 @@ export default function LoginPage() {
         localStorage.setItem('sessionToken', data.sessionToken);
       }
 
-      // Wait for session to be fully saved and cookie to be set
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Verify session was established by checking /api/auth/me
-      const sessionToken = data.sessionToken;
-      const headers: Record<string, string> = {};
-      if (sessionToken) {
-        headers['Authorization'] = `Bearer ${sessionToken}`;
-      }
-      
-      const checkResponse = await fetch('/api/auth/me', {
-        headers,
-        credentials: 'include',
-      });
-
-      if (!checkResponse.ok) {
-        showError("Session Error", "Failed to establish session. Please try again.");
-        setLoading(false);
-        setIsSubmitting(false);
-        return;
-      }
-
       setLocation('/auth');
     } catch (error: any) {
       showError("Login Error", error.message || "Unable to login. Please try again.");
