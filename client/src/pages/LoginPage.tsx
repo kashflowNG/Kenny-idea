@@ -10,9 +10,14 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Add isSubmitting state
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isSubmitting) return; // Prevent duplicate submissions
+
+    setIsSubmitting(true);
     setLoading(true);
 
     try {
@@ -25,22 +30,39 @@ export default function LoginPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        showError("Login Failed", data.error || "Invalid username or password");
+        showError("Login Failed", data.error || "Invalid credentials");
         setLoading(false);
+        setIsSubmitting(false);
         return;
       }
 
       const data = await response.json();
-      
+
       // Store session token in localStorage for subsequent requests
       if (data.sessionToken) {
         localStorage.setItem('sessionToken', data.sessionToken);
       }
-      
+
+      // Wait for session to be fully saved and cookie to be set
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Verify session was established by checking /api/auth/me
+      const checkResponse = await fetch('/api/auth/me', {
+        credentials: 'include',
+      });
+
+      if (!checkResponse.ok) {
+        showError("Session Error", "Failed to establish session. Please try again.");
+        setLoading(false);
+        setIsSubmitting(false);
+        return;
+      }
+
       setLocation('/auth');
     } catch (error: any) {
       showError("Login Error", error.message || "Unable to login. Please try again.");
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -85,7 +107,7 @@ export default function LoginPage() {
           <Button 
             type="submit" 
             className="w-full"
-            disabled={!username || !password || loading}
+            disabled={!username || !password || loading || isSubmitting}
             data-testid="button-login"
           >
             {loading ? "Logging in..." : "Login"}

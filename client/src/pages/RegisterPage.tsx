@@ -12,7 +12,8 @@ export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [pin, setPin] = useState("");
-  const [loading, setLoading] = useState(false); // Added loading state
+  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +23,11 @@ export default function RegisterPage() {
   };
 
   const handlePinComplete = async (pinValue: string) => {
-    setLoading(true); // Set loading to true before fetch
+    if (isSubmitting) return; // Prevent duplicate submissions
+    
+    setIsSubmitting(true);
+    setLoading(true);
+    
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -34,7 +39,8 @@ export default function RegisterPage() {
       if (!response.ok) {
         const data = await response.json();
         showError("Registration Failed", data.error || "Failed to create account");
-        setLoading(false); // Set loading to false on error
+        setLoading(false);
+        setIsSubmitting(false);
         setPin("");
         return;
       }
@@ -46,10 +52,12 @@ export default function RegisterPage() {
         localStorage.setItem('sessionToken', data.sessionToken);
       }
 
+      localStorage.setItem('authenticated', 'true');
       setLocation('/');
     } catch (error: any) {
       showError("Registration Error", error.message || "Unable to register. Please try again.");
-      setLoading(false); // Set loading to false on error
+      setLoading(false);
+      setIsSubmitting(false);
       setPin("");
     }
   };
