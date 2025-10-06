@@ -50,17 +50,22 @@ function Router() {
     );
   }
 
+  useEffect(() => {
+    if (!isAuthenticated && !['/register', '/login', '/auth'].includes(location)) {
+      setLocation('/login');
+    }
+  }, [isAuthenticated, location, setLocation]);
+
   if (!isAuthenticated && !['/register', '/login', '/auth'].includes(location)) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
     return (
       <Switch>
         <Route path="/register" component={RegisterPage} />
         <Route path="/login" component={LoginPage} />
-        <Route path="*">
-          {() => {
-            setLocation('/login');
-            return null;
-          }}
-        </Route>
+        <Route path="/auth" component={AuthPage} />
       </Switch>
     );
   }
