@@ -18,12 +18,14 @@ export default function AuthPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Invalid PIN');
+        showError("Invalid PIN", data.error || "Please check your PIN and try again");
+        setPin("");
+        return;
       }
 
       setLocation('/');
     } catch (error: any) {
-      showError("Authentication Failed", error.message || "Please try again");
+      showError("Authentication Error", error.message || "Unable to verify PIN. Please try again.");
       setPin("");
     }
   };

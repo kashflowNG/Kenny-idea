@@ -31,28 +31,14 @@ export default function RegisterPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        // Use the standardized showError function
-        showError(data.error || 'Registration failed');
-        setPin(""); // Clear PIN on error
-        return; // Stop execution if registration failed
+        showError("Registration Failed", data.error || "Unable to create account");
+        setPin("");
+        return;
       }
-
-      // Assuming the registration API now handles session creation correctly
-      // and we don't need to manually set localStorage here.
-      // If session persistence is still an issue, it needs to be addressed in the API.
-
-      // Success message can be handled differently if needed, but for now,
-      // we'll assume the redirection is sufficient upon successful registration.
-      // If a success toast is desired, it can be re-added here.
-      // toast({
-      //   title: "Account created!",
-      //   description: "Welcome to TRON Wallet",
-      // });
 
       setLocation('/');
     } catch (error: any) {
-      // Use the standardized showError function for network or unexpected errors
-      showError(error.message || 'An unexpected error occurred');
+      showError("Registration Error", error.message || "An unexpected error occurred. Please try again.");
       setPin("");
     }
   };

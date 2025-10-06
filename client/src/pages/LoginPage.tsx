@@ -25,15 +25,16 @@ export default function LoginPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Login failed');
+        showError("Login Failed", data.error || "Invalid username or password");
+        setLoading(false);
+        return;
       }
 
       // Wait a bit for session to be saved before redirecting
       await new Promise(resolve => setTimeout(resolve, 100));
       setLocation('/auth');
     } catch (error: any) {
-      showError("Login Failed", error.message);
-    } finally {
+      showError("Login Error", error.message || "Unable to login. Please try again.");
       setLoading(false);
     }
   };
