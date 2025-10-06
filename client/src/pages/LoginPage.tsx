@@ -43,7 +43,8 @@ export default function LoginPage() {
         localStorage.setItem('sessionToken', data.sessionToken);
       }
 
-      setLocation('/auth');
+      localStorage.setItem('authenticated', 'true');
+      setLocation('/');
     } catch (error: any) {
       showError("Login Error", error.message || "Unable to login. Please try again.");
       setLoading(false);

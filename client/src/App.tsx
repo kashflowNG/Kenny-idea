@@ -10,7 +10,6 @@ import WalletsPage from "@/pages/WalletsPage";
 import SendPage from "@/pages/SendPage";
 import ReceivePage from "@/pages/ReceivePage";
 import SettingsPage from "@/pages/SettingsPage";
-import AuthPage from "@/pages/AuthPage";
 import RegisterPage from "@/pages/RegisterPage";
 import LoginPage from "@/pages/LoginPage";
 import NotFound from "@/pages/not-found";
@@ -41,7 +40,7 @@ function Router() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated && !['/register', '/login', '/auth'].includes(location)) {
+    if (!isLoading && !isAuthenticated && !['/register', '/login'].includes(location)) {
       setLocation('/login');
     }
   }, [isAuthenticated, location, setLocation, isLoading]);
@@ -61,13 +60,8 @@ function Router() {
       <Switch>
         <Route path="/register" component={RegisterPage} />
         <Route path="/login" component={LoginPage} />
-        <Route path="/auth" component={AuthPage} />
       </Switch>
     );
-  }
-
-  if (location === '/auth') {
-    return <AuthPage />;
   }
 
   const showBottomNav = ['/', '/wallets', '/send', '/receive', '/settings'].includes(location);

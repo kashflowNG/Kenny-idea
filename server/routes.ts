@@ -82,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { username, password, pin } = insertUserSchema.parse(req.body);
+      const { username, password } = req.body;
 
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
@@ -90,12 +90,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const hashedPin = await bcrypt.hash(pin, 10);
 
       const user = await storage.createUser({
         username,
         password: hashedPassword,
-        pin: hashedPin,
       });
 
       req.session.userId = user.id;
@@ -141,43 +139,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Login error:', error);
       res.status(400).json({ error: error.message || "Login failed" });
-    }
-  });
-
-  app.post("/api/auth/verify-pin", async (req, res) => {
-    try {
-      console.log('PIN verification - SessionID:', req.sessionID, 'UserID:', req.session.userId);
-      console.log('Session data:', req.session);
-      console.log('Cookies:', req.headers.cookie);
-      
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      const { pin } = req.body;
-      const user = await storage.getUser(req.session.userId);
-
-      if (!user) {
-        return res.status(401).json({ error: "User not found" });
-      }
-
-      console.log('PIN verification details:');
-      console.log('- Received PIN:', pin);
-      console.log('- PIN length:', pin?.length);
-      console.log('- Stored hash:', user.pin);
-      console.log('- Hash length:', user.pin?.length);
-
-      const validPin = await bcrypt.compare(pin, user.pin);
-      console.log('- PIN valid:', validPin);
-      
-      if (!validPin) {
-        return res.status(401).json({ error: "Invalid PIN" });
-      }
-
-      res.json({ success: true });
-    } catch (error: any) {
-      console.error('PIN verification error:', error);
-      res.status(400).json({ error: error.message });
     }
   });
 

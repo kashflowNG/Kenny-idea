@@ -3,27 +3,19 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import PinInput from "@/components/PinInput";
 import { showError } from "@/lib/notifications";
 
 export default function RegisterPage() {
   const [, setLocation] = useLocation();
-  const [step, setStep] = useState<'credentials' | 'pin'>('credentials');
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleCredentialsSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username && password) {
-      setStep('pin');
-    }
-  };
-
-  const handlePinComplete = async (pinValue: string) => {
-    if (isSubmitting) return; // Prevent duplicate submissions
+    
+    if (isSubmitting) return;
     
     setIsSubmitting(true);
     setLoading(true);
@@ -32,7 +24,7 @@ export default function RegisterPage() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, pin: pinValue }),
+        body: JSON.stringify({ username, password }),
         credentials: 'include',
       });
 
@@ -41,7 +33,6 @@ export default function RegisterPage() {
         showError("Registration Failed", data.error || "Failed to create account");
         setLoading(false);
         setIsSubmitting(false);
-        setPin("");
         return;
       }
 
@@ -58,7 +49,6 @@ export default function RegisterPage() {
       showError("Registration Error", error.message || "Unable to register. Please try again.");
       setLoading(false);
       setIsSubmitting(false);
-      setPin("");
     }
   };
 
@@ -70,82 +60,60 @@ export default function RegisterPage() {
             <span className="text-2xl font-bold text-white">T</span>
           </div>
           <h1 className="text-2xl font-bold">Create Account</h1>
-          <p className="text-muted-foreground">
-            {step === 'credentials' ? 'Enter your credentials' : 'Set up your 6-digit PIN'}
-          </p>
+          <p className="text-muted-foreground">Enter your credentials</p>
         </div>
 
-        {step === 'credentials' ? (
-          <form onSubmit={handleCredentialsSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Choose a username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                data-testid="input-username"
-                required
-                disabled={loading} // Disable input while loading
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Choose a password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                data-testid="input-password"
-                required
-                disabled={loading} // Disable input while loading
-              />
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={!username || !password || loading} // Disable button while loading
-              data-testid="button-continue"
-            >
-              {loading ? 'Processing...' : 'Continue'}
-            </Button>
-
-            <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <button 
-                type="button"
-                className="text-primary hover:underline"
-                onClick={() => setLocation('/login')}
-                data-testid="link-login"
-                disabled={loading} // Disable link while loading
-              >
-                Login
-              </button>
-            </p>
-          </form>
-        ) : (
-          <div className="space-y-4">
-            <PinInput
-              value={pin}
-              onChange={setPin}
-              onComplete={handlePinComplete}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              type="text"
+              placeholder="Choose a username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              data-testid="input-username"
+              required
+              disabled={loading}
             />
-
-            <Button 
-              variant="ghost" 
-              className="w-full"
-              onClick={() => setStep('credentials')}
-              data-testid="button-back"
-              disabled={loading} // Disable button while loading
-            >
-              Back to credentials
-            </Button>
           </div>
-        )}
+
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Choose a password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              data-testid="input-password"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <Button 
+            type="submit" 
+            className="w-full"
+            disabled={!username || !password || loading || isSubmitting}
+            data-testid="button-register"
+          >
+            {loading ? 'Creating account...' : 'Create Account'}
+          </Button>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <button 
+              type="button"
+              className="text-primary hover:underline"
+              onClick={() => setLocation('/login')}
+              data-testid="link-login"
+              disabled={loading}
+            >
+              Login
+            </button>
+          </p>
+        </form>
       </div>
     </div>
   );
